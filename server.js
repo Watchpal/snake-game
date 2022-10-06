@@ -2,7 +2,7 @@ import { WebSocketServer } from "ws";
 
 const wss = new WebSocketServer({port: 8081});
 
-wss.on("connection", (ws) => {
+wss.on("connection", (ws, client) => {
   console.log(`Client connected from IP ${ws._socket.remoteAddress}`);
   console.log(`Number of connected clients: ${wss.clients.size}`);
 
@@ -12,12 +12,15 @@ wss.on("connection", (ws) => {
 
   ws.on("message", (data) => {
     let state = JSON.parse(data);
-    console.log("Message received: ", state);
-
-    startGameLoop(state);
+    console.log(`Received message ${data} from user ${client}`);
+    wss.clients.forEach((client) => client.send(JSON.stringify(state)));
+   // wss.clients.forEach(function each(client) {
+      //if (client !== ws && client.readyState === WebSocket.OPEN) {
+      //  client.send(data, { binary: isBinary });
+    //startGameLoop(state);
   });
 })
-
+/*
 function startGameLoop(state){
   const intervalId = setInterval(() => {
     state.player = gameLoop(state);
@@ -30,7 +33,7 @@ function startGameLoop(state){
     else {
       wss.clients.forEach((client) => client.send('Game Over'));
       clearInterval(intervalId);
-    } */
+    } 
 
   }, 500);
 }
@@ -79,4 +82,6 @@ function createFood(state){
   }
 
   state.food = food;
-}
+} 
+
+  */
