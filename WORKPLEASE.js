@@ -10,30 +10,45 @@ function init(e) {
   const websocket = new WebSocket('ws://localhost:8081');
 
   const size = 25;
+  let idset;
 
-  let snake = [];
-  
-  snake[0] = {
-    x : 9,
-    y : 10
-};
-
-snake[1] = {
-  x : 9,
-  y : 11
-};
-
-  let food = {
-    x: Math.floor(Math.random() * 20),
-    y: Math.floor(Math.random() * 20)
+  let gameState = {
+    player1: {
+      newHead:  {
+        x : 3,
+        y : 10,
+      },
+      d: "RIGHT",
+      snake: [
+        {x: 3, y: 10},
+        {x: 2, y: 10},
+        {x: 1, y: 10},
+      ],
+    },
+    player2: {
+      newHead:  {
+        x : 15,
+        y : 5,
+      },
+      d: "DOWN",
+      snake: [
+        {x: 15, y: 5},
+        {x: 15, y: 4},
+        {x: 15, y: 3},
+      ],
+    },
+    food: {
+      x: 1,
+      y: 1
+    },
   };
+  
+  
+  //console.log(gameState.player.snake[0]);
 
-  let d = "RIGHT";
-console.log(snake[0]);
 
-
-  function collision(head,array){
-  for(let i = 0; i < array.length; i++){
+  function collisionSelf(head,array){
+  for(let i = 1; i < array.length; i++){
       if(head.x == array[i].x && head.y == array[i].y){
           return true;
       }
@@ -41,97 +56,190 @@ console.log(snake[0]);
     return false;
   }
   
-  
-  
-  
-  document.addEventListener("keydown",direction);
-
-  function direction(e){
-      let key = e.keyCode;
-      if( key == 37 && d != "RIGHT"){
-          
-          d = "LEFT";
-      }else if(key == 38 && d != "DOWN"){
-          d = "UP";
-          
-      }else if(key == 39 && d != "LEFT"){
-          d = "RIGHT";
-          
-      }else if(key == 40 && d != "UP"){
-          d = "DOWN";
-          
-      }
-  }
-
-
-  function draw(){
-    ctx.reset();
-    console.log(snake);
-    for( let i = 0; i < snake.length ; i++){
-        ctx.fillStyle = "green";
-        ctx.fillRect(snake[i].x * size, snake[i].y * size,size,size);
-        
-        
+  function collisionPlayer(head,array){
+    for(let i = 0; i < array.length; i++){
+        if(head.x == array[i].x && head.y == array[i].y){
+            return true;
+        }
     }
-    ctx.fillStyle = 'blue';
-    ctx.fillRect(food.x * size, food.y * size, size, size);
-    // old head position
-    let posX = snake[0].x;
-    let posY = snake[0].y;
+      return false;
+    }
+  
+  function initSnakeControl(){
+    if(idset % 2 != 0) document.addEventListener("keydown",direction1);
+    else if(idset % 2 === 0) document.addEventListener("keydown",direction2);
+  
+    function direction1(e){
+        let key = e.keyCode;
+        
+        if( key == 37 && gameState.player1.d != "RIGHT")    gameState.player1.d = "LEFT";
+        else if(key == 38 && gameState.player1.d != "DOWN") gameState.player1.d = "UP";
+        else if(key == 39 && gameState.player1.d != "LEFT") gameState.player1.d = "RIGHT";   
+        else if(key == 40 && gameState.player1.d != "UP")   gameState.player1.d = "DOWN";
+        
+        //console.log(idset);
+    }
+  
+    function direction2(e){
+      let key = e.keyCode;
+      
+      if( key == 37 && gameState.player2.d != "RIGHT")    gameState.player2.d = "LEFT";
+      else if(key == 38 && gameState.player2.d != "DOWN") gameState.player2.d = "UP";
+      else if(key == 39 && gameState.player2.d != "LEFT") gameState.player2.d = "RIGHT";   
+      else if(key == 40 && gameState.player2.d != "UP")   gameState.player2.d = "DOWN";
+      
+      //console.log(gameState.player1.d);
+  }
+  }
+  
+  
+
+
+  function initGameLogic1(state){
+    let posX = state.player1.snake[0].x;
+    let posY = state.player1.snake[0].y;
+    console.log(posX);
+    console.log(posY);
     
-    // which direction
-    if( d == "LEFT") posX -= 1;
-    if( d == "UP") posY -= 1;
-    if( d == "RIGHT") posX += 1;
-    if( d == "DOWN") posY += 1;
+    if( state.player1.d === "LEFT") posX -= 1;
+    if( state.player1.d === "UP") posY -= 1;
+    if( state.player1.d === "RIGHT") posX += 1;
+    if( state.player1.d === "DOWN") posY += 1;
+    //console.log(state.player1.d);
+    //console.log(posY);
     
-    // if the snake eats the food
-    if(posX == food.x && posY == food.y){
-        food = {
+    if(posX == state.food.x && posY == state.food.y){
+        gameState.food = {
           x: Math.floor(Math.random() * 20),
           y: Math.floor(Math.random() * 20)
         }
-        // we don't remove the tail
+        websocket.send(JSON.stringify({ type: "sendFood", payload: gameState.food }));
     }else{
-        // remove the tail
-        snake.pop();
+        
+        gameState.player1.snake.pop();
     }
     
-    // add new Head
+    console.log(posX);
+    console.log(posY);
     
-    let newHead = {
+    gameState.player1.newHead = {
+        x : posX,
+        y : posY
+    }
+    console.log(gameState.player1.newHead);
+    
+    
+    // if(posX < 0 || posX > 20 || posY < 0 || posY > 20 || collision(state.player1.newHead,state.player1.snake) || collision(state.player1.newHead,state.player2.snake)){
+    //   websocket.send(JSON.stringify({ type: "end"}));
+        
+    // }
+    
+    gameState.player1.snake.unshift(gameState.player1.newHead);
+  }
+
+  function initGameLogic2(state){
+    let posX = state.player2.snake[0].x;
+    let posY = state.player2.snake[0].y;
+    //console.log(posX);
+    
+    if( state.player2.d == "LEFT") posX -= 1;
+    if( state.player2.d == "UP") posY -= 1;
+    if( state.player2.d == "RIGHT") posX += 1;
+    if( state.player2.d == "DOWN") posY += 1;
+    
+    
+    if(posX == state.food.x && posY == state.food.y){
+        gameState.food = {
+          x: Math.floor(Math.random() * 20),
+          y: Math.floor(Math.random() * 20)
+        }
+        websocket.send(JSON.stringify({ type: "sendFood", payload: gameState.food }));
+        
+    }else{
+        
+        gameState.player2.snake.pop();
+    }
+    
+    
+    
+    gameState.player2.newHead = {
         x : posX,
         y : posY
     }
     
-    // game over
     
-    if(posX < 0 || posX > 20 || posY < 0 || posY > 20 || collision(newHead,snake)){
-        clearInterval(game);
+    
+    // if(posX < 0 || posX > 19 || posY < 0 || posY > 19 || collision(state.player2.newHead,state.player2.snake) || collision(state.player2.newHead,state.player1.snake)){
         
+    //   websocket.send(JSON.stringify({ type: "end"}));
+    // }
+    
+    gameState.player2.snake.unshift(gameState.player2.newHead);
+  }
+
+  function draw(state){
+     if(state.player1.newHead.x < 0 || state.player1.newHead.x > 19 || state.player1.newHead.y < 0 || state.player1.newHead.y > 19 || state.player2.newHead.x < 0 || state.player2.newHead.x > 19 || state.player2.newHead.y < 0 || state.player2.newHead.y > 19 || collisionSelf(state.player1.newHead,state.player1.snake) || collisionPlayer(state.player1.newHead,state.player2.snake) || collisionPlayer(state.player2.newHead,state.player1.snake) || collisionSelf(state.player2.newHead,state.player2.snake)){
+        
+       websocket.send(JSON.stringify({ type: "end"}));
+     }
+    ctx.reset();
+    //console.log(gameState.player.newHead.x);
+    for( let i = 0; i < state.player1.snake.length ; i++){
+        ctx.fillStyle = "green";
+        ctx.fillRect(state.player1.snake[i].x * size, state.player1.snake[i].y * size,size,size);
     }
+    for( let i = 0; i < state.player2.snake.length ; i++){
+      ctx.fillStyle = "red";
+      ctx.fillRect(state.player2.snake[i].x * size, state.player2.snake[i].y * size,size,size);
+  }
+    ctx.fillStyle = 'blue';
+    ctx.fillRect(state.food.x * size, state.food.y * size, size, size);
+    //console.log(state.player.d);
+    if(idset % 2 != 0) {
+      initGameLogic1(gameState);
+      let message1 = { first: gameState.player1}; 
+      websocket.send(JSON.stringify({ type: "gameLogic1", payload: message1 }))
+    }
+    else if(idset % 2 === 0){  
+      initGameLogic2(gameState);}
+      let message2 = { first: gameState.player2}; 
+      websocket.send(JSON.stringify({ type: "gameLogic2", payload: message2 }));
     
-    snake.unshift(newHead);
-    //console.log(snake);
+  }
+
+
+  //let game = setInterval(draw,100);
+
+
+  const handleSocketOpen = (e) => {
+    console.log('Socket has been opened');
+    //draw(gameState);
+    //websocket.send(JSON.stringify(gameState));
+  };
+  const handleSocketMessage = (state) => {
     
-}
+  let gameOfState = JSON.parse(state.data);
+
+    switch(gameOfState.type){ 
+      case "id":
+        idset = gameOfState.payload;
+        console.log(idset);
+        draw(gameState);
+        break;
+      default:
+        initSnakeControl();
+        gameState.food = gameOfState.food; 
+        draw(gameOfState);
+
+    }
 
 
-let game = setInterval(draw,100);
+  //console.log(state.data);  
+  
+  };
 
-
-const handleSocketOpen = (e) => {
-  console.log('Socket has been opened');
-  websocket.send(JSON.stringify(snake));
-};
-const handleSocketMessage = (stateOfGame) => {
-  //gameState = JSON.parse(stateOfGame.data);
-  //console.log(gameState);
-  //requestAnimationFrame(() => paintGame(gameState));
-};
-
-websocket.onopen = handleSocketOpen;
-//websocket.onmessage = handleSocketMessage;
+  websocket.onopen = handleSocketOpen;
+  websocket.onmessage = handleSocketMessage;
 
 
 
