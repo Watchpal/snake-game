@@ -1,4 +1,15 @@
 import { WebSocketServer } from "ws";
+import express from 'express';
+
+const server = express();
+server.use((req,res) => {
+  res.send('Hello World!')
+})
+
+const PORT = process.env.PORT || 8080
+server.listen(PORT, () => {
+  console.log('Server listening on http://localhost:' + PORT)
+})
 
 const wss = new WebSocketServer({port: 8081});
 
