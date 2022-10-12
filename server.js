@@ -2,7 +2,7 @@ import { WebSocketServer } from "ws";
 import express from 'express';
 
 const server = express();
-app.get('/', function(req, res) {
+server.get('/', function(req, res) {
   res.sendFile('index.html', {root: __dirname })
 });
 
