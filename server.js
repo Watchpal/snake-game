@@ -2,9 +2,7 @@ import { WebSocketServer } from "ws";
 import express from 'express';
 
 const server = express();
-server.use((req,res) => {
-  res.send('Hello World!')
-})
+server.get("/", (req, res) => res.type('html').send(html));
 
 const PORT = process.env.PORT || 8080
 server.listen(PORT, () => {
